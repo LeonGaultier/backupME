@@ -26,7 +26,7 @@
 #
 ###############################################################################
 #
-#  Version 1.0.0.2
+#  Version 1.0.0.3
 
 
 use strict;
@@ -117,7 +117,7 @@ sub MainBackup {
         
     $fnState = rotateDailyBackupfiles unless ($fnState);
     $fnState = createDBdump() if ( $self->{config}->{MYSQLDUMP} and not $fnState );
-    $fnState = runBackup(( (split(" ", localtime(time)))[0] =~ /^(Sun)$/ ? 'archiv' : 'daily' )) unless ($fnState);
+    $fnState = runBackup(( (split(" ", localtime(time)))[0] =~ /^(Sun)$/ ? 'archive' : 'daily' )) unless ($fnState);
     
     sendStateToFHEM( ($fnState ? 'error' : 'ok') ) if ( $self->{config}->{FHEMSUPPORT} );
 }

@@ -51,3 +51,26 @@ DBNAMES=fhemLogHistory
 
 #### wo soll der Dump hingeschrieben werden
 DBBACKUPPATH=/opt/fhem/backup
+
+
+```
+BACKUPDIRNAME=fhem_backups
+BACKUPFILENAME=fhem_backup
+SOURCEPATH=/opt/fhem/backup
+FILES_TO_BACKUP=FHEM-"`date +%Y%m%d`"*.tar.gz
+BACKUPPATH=/home/marko/Google_Drive_Secure/pi-webapp01_BACKUPS
+DAILY_DATA_BACKUPS=6
+
+SPECIALCHECK_BACKUPPATH=1
+CLEAN_UP_PATHS=/opt/fhem/backup/*
+CLEAN_UP_DAYS=4
+
+FHEMSUPPORT=1
+FHEMDUMMY=dummyBackupScript
+
+MYSQLDUMP=0
+DBUSER=
+DBPASS=
+DBNAMES=fhemLogHistory
+DBBACKUPPATH=/opt/fhem/backup
+```

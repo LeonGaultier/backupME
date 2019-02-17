@@ -53,6 +53,8 @@ DBNAMES=fhemLogHistory
 DBBACKUPPATH=/opt/fhem/backup
 
 
+
+### Konfigurationsbeispiel:
 ```
 BACKUPDIRNAME=fhem_backups
 BACKUPFILENAME=fhem_backup

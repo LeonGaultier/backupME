@@ -1,4 +1,16 @@
 # backupME
+### Anwenden
+```
+backupME.pl backupME.conf
+```
+
+Es ist möglich mehrere Konfigurationsdateien an zu legen und diese dann immer entsprechend zu übergeben.
+```
+/usr/local/bin/backupME.pl /usr/local/etc/backupME_FHEM.conf
+
+/usr/local/bin/backupME.pl /usr/local/etc/backupME_DOKUWIKI.conf
+```
+
 ### Konfiguration
 #### wie soll das Verzeichnis heißen wo die Backups hin geschrieben werden
 BACKUPDIRNAME=fhem_backups

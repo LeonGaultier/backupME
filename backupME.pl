@@ -26,7 +26,7 @@
 #
 ###############################################################################
 #
-#  Version 1.0.0.4
+my $version = '1.0.1';
 
 
 use strict;
@@ -51,7 +51,8 @@ sub toCleanUp($);
 sub rotateDailyBackupfiles;
 sub createDBdump;
 sub runBackup($);
-sub sendStateToFHEM($);
+sub _sendStateToFHEM($);
+sub checkSendFHEMConnect($);
 
 ##################################################
 # Variables:
@@ -93,6 +94,7 @@ sub MainBackup {
 
     if ( not checkBackUpPathStructsExist($self->{config}->{BACKUPPATH}) and $self->{config}->{SPECIALCHECK_BACKUPPATH} ) {
         logMessage(3,'can\'t find ' . $self->{config}->{BACKUPPATH} . '! check special mount?(encf,NFS,SMB)');
+        checkSendFHEMConnect(1);
         return 0;
     }
 
@@ -110,17 +112,14 @@ sub MainBackup {
             foreach (split(/,/,$self->{config}->{CLEAN_UP_PATHS})) {
                 toCleanUp($_);
             }
-        } else { return logMessage(3,'no find command found') }
+        } else { logMessage(3,'no find command found'); checkSendFHEMConnect(1); return 0 }
     }
         
     $fnState = rotateDailyBackupfiles unless ($fnState);
     $fnState = createDBdump() if ( $self->{config}->{MYSQLDUMP} and not $fnState );
     $fnState = runBackup(( (split(" ", localtime(time)))[0] =~ /^(Sun)$/ ? 'archive' : 'daily' )) unless ($fnState);
 
-    if ( $self->{config}->{FHEMSUPPORT} ) {
-        logMessage(3,'can\'t connect to FHEM Instance')
-            unless ( sendStateToFHEM(($fnState ? 'error' : 'ok')) );
-    }
+    checkSendFHEMConnect($fnState);
 
     MainBackup if( scalar(@{$self->{configfiles}}) > 0 );
 }
@@ -321,18 +320,32 @@ sub createBackUpPathStructs($) {
     return $state;
 }
 
-sub sendStateToFHEM($) {
+sub checkSendFHEMConnect($) {
+    my $fnState = shift;
+
+    if ( $self->{config}->{FHEMSUPPORT} ) {
+        logMessage(3,'can\'t connect to FHEM Instance')
+            unless ( _sendStateToFHEM(($fnState ? 'error' : 'ok')) );
+    }
+}
+
+sub _sendStateToFHEM($) {
     my $bckState = shift;
-    
-    my $HOSTNAME = "127.0.0.1";
-    my $HOSTPORT = "7072";
+
     my $socket = IO::Socket::INET->new('PeerAddr' => $self->{config}->{FHEMHOST},'PeerPort' => $self->{config}->{TELNETPORT},'Proto' => 'tcp')
         or return 0;
 
-    print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState ."\n";
-    print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' dbBackup ' . ($self->{config}->{MYSQLDUMP} ? 'yes' : 'no') ."\n";
-    print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePath ' . ((defined($self->{config}->{CLEAN_UP_PATHS}) and $self->{config}->{CLEAN_UP_PATHS}) ? 'yes' : 'no') ."\n";
-    
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' dbBackup ' . ($self->{config}->{MYSQLDUMP} ? 'yes' : 'no') . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePath ' . ((defined($self->{config}->{CLEAN_UP_PATHS}) and $self->{config}->{CLEAN_UP_PATHS}) ? 'yes' : 'no') . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' BACKUPDIRNAME ' . $self->{config}->{BACKUPDIRNAME} . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' BACKUPFILENAME ' . $self->{config}->{BACKUPFILENAME} . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' SOURCEPATH ' . $self->{config}->{SOURCEPATH} ."\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' FILES_TO_BACKUP ' . $self->{config}->{FILES_TO_BACKUP} . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' BACKUPPATH ' . $self->{config}->{BACKUPPATH} ."\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' DAILY_DATA_BACKUPS ' . $self->{config}->{DAILY_DATA_BACKUPS} . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' DBNAMES ' . $self->{config}->{DBNAMES} . "\n") if ( $self->{config}->{MYSQLDUMP} );
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' scriptVersion ' . $version . "\n");
     $socket->close;
     return 1;
 }

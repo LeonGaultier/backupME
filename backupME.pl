@@ -326,7 +326,7 @@ sub sendStateToFHEM($) {
     
     my $HOSTNAME = "127.0.0.1";
     my $HOSTPORT = "7072";
-    my $socket = IO::Socket::INET->new('PeerAddr' => $HOSTNAME,'PeerPort' => $HOSTPORT,'Proto' => 'tcp')
+    my $socket = IO::Socket::INET->new('PeerAddr' => $self->{config}->{FHEMHOST},'PeerPort' => $self->{config}->{TELNETPORT},'Proto' => 'tcp')
         or return 0;
 
     print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState ."\n";

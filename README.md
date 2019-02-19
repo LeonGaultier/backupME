@@ -5,6 +5,7 @@
 - die Konsolenprogramme tar und bzip2
 - optional für den MySQL Dump das Programm mysqldump
 - optional für CleanUp das Programm find
+- für das senden an FHEM wird eine passwortlose telnet Instanz benötigt
 
 Alle Abhängikeiten werden vor dem eigentlichen Start geprüft. Die optionalen werden nur bei aktiver Verwendung überprüft.
 
@@ -64,6 +65,9 @@ FHEMSUPPORT=1
 
 #### Name des FHEM Dummys für das schreiben des Ergebnisses
 FHEMDUMMY=dummyBackupScript
+
+FHEMHOST=
+TELNETPORT=
 
 
 ### MySQL DB Dumps

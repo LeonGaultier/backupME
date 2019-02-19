@@ -4,11 +4,17 @@
 backupME.pl backupME.conf
 ```
 
-Es ist möglich mehrere Konfigurationsdateien an zu legen und diese dann immer entsprechend zu übergeben.
+Es ist möglich mehrere Konfigurationsdateien an zu legen und backupME zu übergeben.
 ```
-/usr/local/bin/backupME.pl /usr/local/etc/backupME_FHEM.conf
+/usr/local/bin/backupME.pl -c /usr/local/etc/backupME_FHEM.conf
 
-/usr/local/bin/backupME.pl /usr/local/etc/backupME_DOKUWIKI.conf
+/usr/local/bin/backupME.pl --configs /usr/local/etc/backupME_DOKUWIKI.conf
+
+/usr/local/bin/backupME.pl -c /usr/local/etc/backupME_FHEM.conf,/usr/local/etc/backupME_DOKUWIKI.conf
+
+/usr/local/bin/backupME.pl --configs /usr/local/etc/backupME_FHEM.conf,/usr/local/etc/backupME_DOKUWIKI.conf
+
+/usr/local/bin/backupME.pl --configfiles /usr/local/etc/backupME_FHEM.conf,/usr/local/etc/backupME_DOKUWIKI.conf
 ```
 
 ### Konfiguration

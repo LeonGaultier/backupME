@@ -116,8 +116,11 @@ sub MainBackup {
     $fnState = rotateDailyBackupfiles unless ($fnState);
     $fnState = createDBdump() if ( $self->{config}->{MYSQLDUMP} and not $fnState );
     $fnState = runBackup(( (split(" ", localtime(time)))[0] =~ /^(Sun)$/ ? 'archive' : 'daily' )) unless ($fnState);
-    
-    sendStateToFHEM( ($fnState ? 'error' : 'ok') ) if ( $self->{config}->{FHEMSUPPORT} );
+
+    if ( $self->{config}->{FHEMSUPPORT} ) {
+        logMessage(3,'can\'t connect to FHEM Instance')
+            unless ( sendStateToFHEM(($fnState ? 'error' : 'ok')) );
+    }
 
     MainBackup if( scalar(@{$self->{configfiles}}) > 0 );
 }
@@ -253,13 +256,9 @@ sub readConfigFile {
 
 sub parseOptions {
     my $conffiles                   = undef;
-    
-    ## Aufruf
-    # --configfiles <filenames>
-    # -config
 
     GetOptions(
-        'configfiles|configs|c=s'    => \$conffiles,
+        'configfiles|configs|c=s'   => \$conffiles,
     ) or usageExit;
     
     usageExit unless ( defined($conffiles) );
@@ -278,9 +277,9 @@ sub usageExit {
 
 sub logMessage($$) {
     my ($level,$text) = @_;
-    my %levels = (  1 => "\t\tInfo - ",
+    my %levels = (  1 => 'Info - ',
                     2 => "\tWarning - ",
-                    3 => 'ERROR!!! - ',
+                    3 => "\t\tERROR!!! - ",
         );
 
     print($levels{$level} . $text . "\n");
@@ -328,11 +327,12 @@ sub sendStateToFHEM($) {
     my $HOSTNAME = "127.0.0.1";
     my $HOSTPORT = "7072";
     my $socket = IO::Socket::INET->new('PeerAddr' => $HOSTNAME,'PeerPort' => $HOSTPORT,'Proto' => 'tcp')
-        or return 'can\'t connect to FHEM Instance';
+        or return 0;
 
     print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState ."\n";
     print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' dbBackup ' . ($self->{config}->{MYSQLDUMP} ? 'yes' : 'no') ."\n";
     print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePath ' . ((defined($self->{config}->{CLEAN_UP_PATHS}) and $self->{config}->{CLEAN_UP_PATHS}) ? 'yes' : 'no') ."\n";
     
     $socket->close;
+    return 1;
 }

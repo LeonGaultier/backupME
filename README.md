@@ -41,8 +41,8 @@ DAILY_DATA_BACKUPS=6
 #### Soll bei nicht vorhanden sein des Backupverzeichnis das Skript abgebrochen werden. Sinnvoll bei encfs oder eingebundenen Netzwerkverzeichnissen. 0 nein 1 ja
 SPECIALCHECK_BACKUPPATH=1
 
-#### Verzeichnisse welche aufgeräumt werden sollen. Löschen aller Daten älter CLEAN_UP_DAYS Tage
-CLEAN_UP_PATHS=/opt/fhem/backup/*
+#### # Verzeichnisse oder Dateien unterhalb von SOURCEPATH, welche aufgeräumt werden sollen. Löschen aller Daten älter CLEAN_UP_DAYS Tage. Kommasepariert
+CLEAN_UP_PATHS=/*
 
 #### löschen älter X Tage
 CLEAN_UP_DAYS=4

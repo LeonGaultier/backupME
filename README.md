@@ -1,4 +1,13 @@
 # backupME
+
+### Voraussetzungen
+- minimum Perl > 5.12 erwartet
+- die Konsolenprogramme tar und bzip2
+- optional für den MySQL Dump das Programm mysqldump
+- optional für CleanUp das Programm find
+
+Alle Abhängikeiten werden vor dem eigentlichen Start geprüft. Die optionalen werden nur bei aktiver Verwendung überprüft.
+
 ### Anwenden
 ```
 backupME.pl backupME.conf
@@ -16,6 +25,9 @@ Es ist möglich mehrere Konfigurationsdateien an zu legen und backupME zu überg
 
 /usr/local/bin/backupME.pl --configfiles /usr/local/etc/backupME_FHEM.conf,/usr/local/etc/backupME_DOKUWIKI.conf
 ```
+
+Da ein Backup zu meist Abends oder in der Nacht alleine laufen soll/kann, empfehle ich einen Eintrag in der crontab. Also das einrichten eines Cronjobs
+
 
 ### Konfiguration
 #### wie soll das Verzeichnis heißen wo die Backups hin geschrieben werden

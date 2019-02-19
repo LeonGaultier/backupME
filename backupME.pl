@@ -26,7 +26,7 @@
 #
 ###############################################################################
 #
-#  Version 1.0.0.3
+#  Version 1.0.0.4
 
 
 use strict;
@@ -35,10 +35,13 @@ use POSIX;
 
 use Term::ANSIColor;
 use IO::Socket::INET;
+use Getopt::Long;
 
 ##################################################
 # Forward declarations
 #
+sub parseOptions;
+sub usageExit;
 sub readConfigFile;
 sub logMessage($$);
 sub MainBackup;
@@ -60,36 +63,31 @@ my $self = {};
 # Start the program
 my ($conffile,$debug,$acount);
 $debug = 0;
-$conffile = shift @ARGV if( scalar(@ARGV) > 0 );
 
-unless ( defined($conffile) and $conffile ) {
-    logMessage(3,'no Configfile specified');
-    exit;
-}
-
-unless ( -e $conffile ) {
-    logMessage(3,'can\'t find Configfile');
-    exit;
-}
+my @conffiles = split(/,/,parseOptions);
+$self->{configfiles} = \@conffiles;
 
 $self->{config}->{TARCMDPATH} = qx(which tar);
 chomp($self->{config}->{TARCMDPATH});
-
 unless ( defined($self->{config}->{TARCMDPATH}) and $self->{config}->{TARCMDPATH} ) {
     logMessage(3,'can\'t find tar command');
-    exit 0;
+    exit 1;
 }
 
-unless ( readConfigFile ) {
-    MainBackup;
-} else { logMessage(3,'cant\'t read config file'); exit 0 };
-
+MainBackup;
 
 exit 0;
+
 
 ##### SUBS ####
 
 sub MainBackup {
+    
+    unless ( readConfigFile ) {
+        logMessage(3,'cant\'t read config file');
+        return 0;
+    }
+
     my $fnState = 0;
     my @bckPathStructur = ('archive','daily');
 
@@ -120,6 +118,8 @@ sub MainBackup {
     $fnState = runBackup(( (split(" ", localtime(time)))[0] =~ /^(Sun)$/ ? 'archive' : 'daily' )) unless ($fnState);
     
     sendStateToFHEM( ($fnState ? 'error' : 'ok') ) if ( $self->{config}->{FHEMSUPPORT} );
+
+    MainBackup if( scalar(@{$self->{configfiles}}) > 0 );
 }
 
 sub runBackup($) {
@@ -145,7 +145,7 @@ sub runBackup($) {
     }
     else {
         logMessage(3,"Couldn't use CMD: $!");
-        return 1;
+        $state = 1;
     }
     
     return $state;
@@ -207,7 +207,7 @@ sub toCleanUp($) {
     my $cleanUpPath = shift;
     
     my $state = 1;
-    if ( open( CMD, "$self->{config}->{FINDCMDPATH} $cleanUpPath -mtime +$self->{config}->{CLEAN_UP_DAYS} -exec rm -vrf {} \\; 2>&1 |" ) ) {
+    if ( open( CMD, "$self->{config}->{FINDCMDPATH} $self->{config}->{SOURCEPATH}$cleanUpPath -mtime +$self->{config}->{CLEAN_UP_DAYS} -exec rm -vrf {} \\; 2>&1 |" ) ) {
         
         while ( my $line = <CMD> ) {
             chomp($line);
@@ -220,7 +220,6 @@ sub toCleanUp($) {
         }
 
         close(CMD);
-        return $state;
     }
     else {
         logMessage(3,"Couldn't use CMD: $!");
@@ -231,6 +230,8 @@ sub toCleanUp($) {
 }
 
 sub readConfigFile {
+    my $conffile = shift(@{$self->{configfiles}});
+
     if ( open(CF, "<$conffile") ) {
         while ( my $line = <CF> ) {
             chomp($line);
@@ -244,21 +245,45 @@ sub readConfigFile {
         close(CF);
     }
     else {
-        logMessage(3,"Couldn't use CF: $!");
-        return 1;
+        return 0;
     }
     
-    return 0;
+    return 1;
+}
+
+sub parseOptions {
+    my $conffiles                   = undef;
+    
+    ## Aufruf
+    # --configfiles <filenames>
+    # -config
+
+    GetOptions(
+        'configfiles|configs|c=s'    => \$conffiles,
+    ) or usageExit;
+    
+    usageExit unless ( defined($conffiles) );
+
+    return ($conffiles);
+}
+
+sub usageExit {
+
+    print('usage:' . "\n");
+    printf("\t" . '-c <configfile1>,<configfile2> ...' . "\n");
+    printf("\t" . '-configs <configfile1>,<configfile2> ...' . "\n");
+    printf("\t" . '--configfiles <configfile1>,<configfile2> ...' . "\n");
+    exit(1);
 }
 
 sub logMessage($$) {
     my ($level,$text) = @_;
-    my %levels = (  1 => 'bright_blue on_bright_green',
-                    2 => '',
-                    3 => 'bright_blue on_bright_red',
+    my %levels = (  1 => "\t\tInfo - ",
+                    2 => "\tWarning - ",
+                    3 => 'ERROR!!! - ',
         );
 
-    print colored([$levels{$level}], $text, "\n");
+    print($levels{$level} . $text . "\n");
 }
 
 sub checkBackUpPathStructsExist($) {
@@ -287,7 +312,7 @@ sub createBackUpPathStructs($) {
         }
 
         close(CMD);
-        return $state;
+        $state = 0;
     }
     else {
         logMessage(3,"Couldn't use CMD: $!");
@@ -302,9 +327,12 @@ sub sendStateToFHEM($) {
     
     my $HOSTNAME = "127.0.0.1";
     my $HOSTPORT = "7072";
-    my $socket = IO::Socket::INET->new('PeerAddr' => $HOSTNAME,'PeerPort' => $HOSTPORT,'Proto' => 'tcp') ;
+    my $socket = IO::Socket::INET->new('PeerAddr' => $HOSTNAME,'PeerPort' => $HOSTPORT,'Proto' => 'tcp')
+        or return 'can\'t connect to FHEM Instance';
 
     print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState ."\n";
+    print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' dbBackup ' . ($self->{config}->{MYSQLDUMP} ? 'yes' : 'no') ."\n";
+    print $socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePath ' . ((defined($self->{config}->{CLEAN_UP_PATHS}) and $self->{config}->{CLEAN_UP_PATHS}) ? 'yes' : 'no') ."\n";
     
     $socket->close;
 }

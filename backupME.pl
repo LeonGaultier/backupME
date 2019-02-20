@@ -341,6 +341,7 @@ sub _sendStateToFHEM($) {
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' state ' . $bckState . "\n");
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' dbBackup ' . ($self->{config}->{MYSQLDUMP} ? 'yes' : 'no') . "\n");
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePath ' . ((defined($self->{config}->{CLEAN_UP_PATHS}) and $self->{config}->{CLEAN_UP_PATHS}) ? 'yes' : 'no') . "\n");
+    print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' cleanUpSourcePaths ' . $self->{config}->{CLEAN_UP_PATHS} . "\n") if ( defined($self->{config}->{CLEAN_UP_PATHS}) );
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' BACKUPDIRNAME ' . $self->{config}->{BACKUPDIRNAME} . "\n");
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' BACKUPFILENAME ' . $self->{config}->{BACKUPFILENAME} . "\n");
     print($socket 'setreading ' . $self->{config}->{FHEMDUMMY} . ' SOURCEPATH ' . $self->{config}->{SOURCEPATH} ."\n");

@@ -26,7 +26,7 @@
 #
 ###############################################################################
 #
-my $version = '1.0.1';
+my $version = '1.0.2';
 
 
 use strict;
@@ -206,10 +206,13 @@ sub rotateDailyBackupfiles {
 }
 
 sub toCleanUp($) {
+#### spezielle Angabe des cleanUpPath mit !EXPERT also !EXPERT/home/marko/test/* wird ausserhalb von SOURCEPATH behandelt
     my $cleanUpPath = shift;
-    
+
+    $cleanUpPath = ( (split('EXPERT',$cleanUpPath))[0] eq '!' ? (split('EXPERT',$cleanUpPath))[1] : $self->{config}->{SOURCEPATH} . $cleanUpPath );
+
     my $state = 1;
-    if ( open( CMD, "$self->{config}->{FINDCMDPATH} $self->{config}->{SOURCEPATH}$cleanUpPath -mtime +$self->{config}->{CLEAN_UP_DAYS} -exec rm -vrf {} \\; 2>&1 |" ) ) {
+    if ( open( CMD, "$self->{config}->{FINDCMDPATH} $cleanUpPath -mtime +$self->{config}->{CLEAN_UP_DAYS} -exec rm -vrf {} \\; 2>&1 |" ) ) {
         
         while ( my $line = <CMD> ) {
             chomp($line);

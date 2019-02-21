@@ -53,6 +53,7 @@ sub createDBdump;
 sub runBackup($);
 sub _sendStateToFHEM($);
 sub checkSendFHEMConnect($);
+sub MainSystemBackup;
 
 ##################################################
 # Variables:
@@ -65,8 +66,10 @@ my $self = {};
 my ($conffile,$debug,$acount);
 $debug = 0;
 
-my @conffiles = split(/,/,parseOptions);
+my ($conffilestring,$mode) = parseOptions;
+my @conffiles = split(/,/,$conffilestring);
 $self->{configfiles} = \@conffiles;
+$self->{mode} = $mode;
 
 $self->{config}->{TARCMDPATH} = qx(which tar);
 chomp($self->{config}->{TARCMDPATH});
@@ -75,12 +78,13 @@ unless ( defined($self->{config}->{TARCMDPATH}) and $self->{config}->{TARCMDPATH
     exit 1;
 }
 
-MainBackup;
+MainBackup if ( $self->{mode} eq 'backup' );
+MainSystemBackup if ( $self->{mode} eq 'system' );
 
 exit 0;
 
 
-##### SUBS ####
+##### SUBS for Backup ####
 
 sub MainBackup {
     
@@ -258,22 +262,25 @@ sub readConfigFile {
 
 sub parseOptions {
     my $conffiles                   = undef;
+    my $mode                        = 'backup';
 
     GetOptions(
-        'configfiles|configs|c=s'   => \$conffiles,
+        'backupMode|mode|m=s'      => \$mode,
+        'configfiles|configs|c=s'   => \$conffiles
     ) or usageExit;
     
-    usageExit unless ( defined($conffiles) );
+    $mode =~ m/^backup|system$/ or usageExit;
+    defined($conffiles) or usageExit;
 
-    return ($conffiles);
+    return ($conffiles,$mode);
 }
 
 sub usageExit {
 
     print('usage:' . "\n");
-    printf("\t" . '-c <configfile1>,<configfile2> ...' . "\n");
-    printf("\t" . '-configs <configfile1>,<configfile2> ...' . "\n");
-    printf("\t" . '--configfiles <configfile1>,<configfile2> ...' . "\n");
+    printf("\t" . '-c <configfile1>,<configfile2>... -m <backup|system>' . "\n");
+    printf("\t" . '-configs <configfile1>,<configfile2>... -mode <backup|system>' . "\n");
+    printf("\t" . '--configfiles <configfile1>,<configfile2> ...--backupMode <backup|system>' . "\n");
     exit(1);
 }
 
@@ -322,6 +329,18 @@ sub createBackUpPathStructs($) {
 
     return $state;
 }
+
+
+##### SUBS for Systembackup ####
+
+
+sub MainSystemBackup {
+
+
+
+}
+
+##### SUBS for FHEM ####
 
 sub checkSendFHEMConnect($) {
     my $fnState = shift;
